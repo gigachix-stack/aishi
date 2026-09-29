@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI-агент урока</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--ink:#14213d;--mute:#5d6b82;--line:#d9dfe8;--acc:#3b4cca;--acc-t:#e6e9fb;--ok:#1f9d63;--ok-t:#dff3e9;--warn:#c98a00;--warn-t:#fbf0d2;--bad:#d1343f;--bad-t:#fbe0e2;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1524;--panel:#182036;--ink:#e8ecf6;--mute:#93a0ba;--line:#2a3452;--acc:#8b97ff;--acc-t:#252e5c;--ok:#4cc790;--ok-t:#15382b;--warn:#e8b23a;--warn-t:#3d3113;--bad:#ff7b84;--bad-t:#411c21}}
+:root[data-theme="dark"]{--bg:#0f1524;--panel:#182036;--ink:#e8ecf6;--mute:#93a0ba;--line:#2a3452;--acc:#8b97ff;--acc-t:#252e5c;--ok:#4cc790;--ok-t:#15382b;--warn:#e8b23a;--warn-t:#3d3113;--bad:#ff7b84;--bad-t:#411c21}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Onest,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0;font-weight:700}
+h1 small{display:block;font-weight:400;color:var(--mute);font-size:13px}
+.live{display:flex;align-items:center;gap:8px;background:var(--acc-t);color:var(--acc);padding:6px 12px;border-radius:99px;font-weight:600;font-size:13px}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:p 1.6s infinite}
+@keyframes p{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live i{animation:none}}
+nav{display:flex;gap:4px;padding:10px 20px 0;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line)}
+nav button{border:0;background:none;color:var(--mute);font:600 14px Onest,system-ui,sans-serif;padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--acc);border-color:var(--acc)}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+main{max-width:1080px;margin:0 auto;padding:20px}
+.view{display:none}.view.on{display:block}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1.3fr 1fr}
+@media(max-width:800px){.g2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+h2{margin:0 0 4px;font-size:17px}
+p.sub{margin:0 0 14px;color:var(--mute);font-size:13.5px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.stat{flex:1;min-width:110px;padding:12px;border-radius:8px}
+.stat b{font-size:26px;display:block;line-height:1.1}
+.s-ok{background:var(--ok-t);color:var(--ok)}.s-warn{background:var(--warn-t);color:var(--warn)}.s-bad{background:var(--bad-t);color:var(--bad)}
+.map{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+@media(max-width:520px){.map{grid-template-columns:repeat(4,1fr)}}
+.pc{border:2px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 2px;text-align:center;cursor:pointer;color:var(--ink);font:600 12px Onest,system-ui,sans-serif}
+.pc span{display:block;width:12px;height:12px;border-radius:50%;margin:4px auto 0}
+.pc[data-s=ok] span{background:var(--ok)}.pc[data-s=warn] span{background:var(--warn)}.pc[data-s=bad] span{background:var(--bad)}
+.pc[aria-pressed=true]{border-color:var(--acc)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;color:var(--mute);font-size:13px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12.5px;font-weight:600}
+.t-ok{background:var(--ok-t);color:var(--ok)}.t-warn{background:var(--warn-t);color:var(--warn)}.t-bad{background:var(--bad-t);color:var(--bad)}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 14px;font:600 13.5px Onest,system-ui,sans-serif;cursor:pointer}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.pri{color:#0f1524}}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.help{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.help:first-of-type{border-top:0}
+.help b{min-width:70px}
+.chk{list-style:none;margin:10px 0;padding:0}
+.chk li{padding:5px 0;font-family:ui-monospace,Consolas,monospace;font-size:13.5px}
+.chk .y{color:var(--ok)}.chk .n{color:var(--bad)}
+textarea{width:100%;min-height:190px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:13.5px/1.5 ui-monospace,Consolas,monospace;padding:12px;resize:vertical}
+.box{border-left:4px solid var(--acc);background:var(--acc-t);padding:10px 14px;border-radius:0 8px 8px 0;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--mute);font-weight:600;font-size:13px}
+.tw{overflow-x:auto}
+input.num{width:56px;padding:5px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+.rep dl{display:grid;grid-template-columns:200px 1fr;gap:8px 16px;margin:0}
+.rep dt{color:var(--mute)}.rep dd{margin:0}
+@media(max-width:600px){.rep dl{grid-template-columns:1fr}}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:var(--ok)}
+.notice{font-size:13px;color:var(--mute);margin-top:14px}
+</style>
+</head>
+<body>
+<header>
+<h1>AI-агент урока<small>Тема: «Структура HTML-документа» · группа из 24 обучающихся</small></h1>
+<div id="keyBox" style="display:none;gap:6px;align-items:center;flex-wrap:wrap"><select id="prov" class="num" style="width:auto" aria-label="Источник ИИ"><option value="browser">В браузере (бесплатно, без установки)</option><option value="ollama">Ollama (бесплатно, локально)</option><option value="claude">Claude API (платный ключ)</option></select><input id="key" class="num" style="width:200px" aria-label="Модель или ключ"><button class="btn" id="keySave">Сохранить</button></div>
+<div class="live" role="status"><i></i>AI LIVE · анализируется 24 рабочие тетради</div>
+</header>
+<nav role="tablist" id="tabs">
+<button role="tab" aria-selected="true" data-v="class">Карта класса</button>
+<button role="tab" aria-selected="false" data-v="help">Кому нужна помощь?</button>
+<button role="tab" aria-selected="false" data-v="student">Тетрадь ученика</button>
+<button role="tab" aria-selected="false" data-v="marks">Оценки и расхождения</button>
+<button role="tab" aria-selected="false" data-v="report">Итог урока</button>
+</nav>
+<main>
+
+<section class="view on" id="v-class">
+<div class="stats">
+<div class="stat s-ok"><b>16</b>уверенно</div>
+<div class="stat s-warn"><b>6</b>есть ошибки</div>
+<div class="stat s-bad"><b>2</b>нужно внимание</div>
+</div>
+<div class="grid g2">
+<div class="card">
+<h2>Компьютерный кабинет</h2>
+<p class="sub">Нажмите на компьютер, чтобы увидеть, что заметил AI.</p>
+<div class="map" id="map"></div>
+<div class="legend"><span><i class="dot" style="background:var(--ok)"></i>без затруднений</span><span><i class="dot" style="background:var(--warn)"></i>найдена ошибка</span><span><i class="dot" style="background:var(--bad)"></i>нужен преподаватель</span></div>
+</div>
+<div class="card" id="pcInfo" aria-live="polite"></div>
+</div>
+<div class="card" style="margin-top:16px">
+<h2>Одинаковая ошибка у 7 обучающихся</h2>
+<p class="sub" style="margin:0">Не используют атрибут <code>href</code> корректно. Остановите работу на 30–60 секунд и объясните момент всей группе, не называя учеников.</p>
+</div>
+</section>
+
+<section class="view" id="v-help">
+<div class="card">
+<h2>Требуют внимания: 3</h2>
+<p class="sub">AI сравнивает работу группы с критериями и показывает, к кому подойти в первую очередь.</p>
+<div class="help"><b>ПК №07</b><div><b>Данияр</b> <span class="tag t-bad">3 повтора</span><br>Повторил одну и ту же ошибку в структуре HTML 3 раза.</div></div>
+<div class="help"><b>ПК №12</b><div><b>Алина</b> <span class="tag t-bad">простой 6 мин</span><br>Не выполняет текущее задание уже 6 минут.</div></div>
+<div class="help"><b>ПК №19</b><div><b>Арман</b> <span class="tag t-warn">2 критерия</span><br>Результат не соответствует двум критериям задания.</div></div>
+</div>
+<div class="card" style="margin-top:16px">
+<h2>AI-разбор группы</h2><p class="sub">Claude анализирует данные группы и предлагает следующий шаг.</p><div class="row" style="margin:0 0 12px"><button class="btn pri" id="grp">Спросить AI, что делать сейчас</button></div><div id="grpOut" aria-live="polite"></div></div>
+<div class="card" style="margin-top:16px">
+<h2>Другие уведомления AI LIVE</h2>
+<p class="sub" style="margin:0">3 обучающихся завершили раньше остальных · Все обучающиеся завершили задание №1</p>
+</div>
+</section>
+
+<section class="view" id="v-student">
+<div class="grid g2">
+<div class="card">
+<h2>Айдос · Задание №1</h2>
+<p class="sub">Создайте базовую структуру HTML-документа. Внесите правку и нажмите «Отправить». Попробуйте ошибиться несколько раз, чтобы увидеть, как растёт подсказка.</p>
+<label class="sub" for="crit" style="display:block;margin:0 0 4px"><b>Условие и критерии (задаёт преподаватель)</b></label><textarea id="crit" style="min-height:96px;margin-bottom:12px">Условие: создать базовую структуру HTML-документа.
+Критерии:
+1. присутствует &lt;!DOCTYPE html&gt;
+2. присутствует &lt;html&gt;
+3. присутствует &lt;head&gt;
+4. присутствует &lt;body&gt;
+5. структура элементов правильная</textarea>
+<textarea id="code" spellcheck="false" aria-label="Код ученика"><!DOCTYPE html>
+<html>
+<head>
+  <title>Моя страница</title>
+</head>
+</html></textarea>
+<div class="row"><button class="btn pri" id="send">Отправить на проверку</button><span id="aiState" class="tag t-ok" hidden></span><button class="btn" id="reset">Сбросить</button></div>
+</div>
+<div class="card" aria-live="polite">
+<h2>AI-анализ</h2>
+<div id="res"><p class="sub">Проверка ещё не запускалась.</p></div>
+</div>
+</div>
+<p class="notice">Режим «педагогическая подсказка»: ошибка → мягкая подсказка → повторная попытка → более конкретная подсказка. Готовое решение AI не показывает.</p>
+</section>
+
+<section class="view" id="v-marks">
+<div class="card">
+<h2>Взаимооценка, самооценка и AI</h2>
+<p class="sub">AI не решает, кто прав. Итоговую оценку сохраняет преподаватель отдельно от рекомендации AI.</p>
+<div class="tw"><table>
+<thead><tr><th>Работа</th><th>Взаимооценка</th><th>AI</th><th>Итог</th><th>Решение</th></tr></thead>
+<tbody id="mk"></tbody>
+</table></div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+<div class="card"><h2>Самооценка выше результата</h2><p class="sub" style="margin:0">Самооценка 5/5, по критериям выполнено 3/5. Есть расхождение между самооценкой и результатом, это повод для рефлексии.</p></div>
+<div class="card"><h2>Самооценка ниже результата</h2><p class="sub" style="margin:0">Самооценка 2/5, по критериям 5/5. Обучающийся выполнил все критерии, но низко оценил свой результат.</p></div>
+</div>
+</section>
+
+<section class="view" id="v-report">
+<div class="card rep">
+<h2>AI Lesson Report</h2>
+<p class="sub">Формируется после нажатия «AI — подвести итог урока».</p>
+<div class="row" style="margin:0 0 16px"><button class="btn pri" id="gen">Подвести итог урока</button></div>
+<div id="repAI" aria-live="polite"></div>
+<div id="rep" hidden>
+<dl>
+<dt>Выполнили практическое задание</dt><dd>21 из 24<div class="bar"><i style="width:87%"></i></div></dd>
+<dt>Достигли всех критериев</dt><dd>18 из 24<div class="bar"><i style="width:75%"></i></div></dd>
+<dt>Лучше всего освоено</dt><dd>Создание базовой структуры HTML</dd>
+<dt>Частая ошибка</dt><dd>Неверное использование атрибутов <code>href</code> и <code>src</code></dd>
+<dt>Нужна поддержка</dt><dd>3 обучающихся (Данияр, Алина, Арман)</dd>
+<dt>Подсказок AI использовано</dt><dd>31</dd>
+<dt>Расхождения оценок</dt><dd>2 работы отмечены для проверки</dd>
+<dt>Следующее занятие</dt><dd>Короткое закрепляющее задание по атрибутам HTML</dd>
+</dl>
+<div class="box"><b>Комментарий Айдосу.</b> Ты правильно выполнил 4 из 5 заданий и хорошо понимаешь структуру HTML-документа. В задании со ссылками была ошибка в <code>href</code>, после подсказки ты её исправил. Стоит закрепить работу с атрибутами.</div>
+</div>
+</div>
+</section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+// tabs
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+b.dataset.v));
+});
+// class map
+const names={3:'Марат',6:'Данияр',7:'Данияр',8:'Мадина',12:'Алина',15:'Айдос',19:'Арман',21:'Санжар'};
+const info={
+ bad:{6:['Данияр','В заданиях №2 и №3 повторяется одна и та же ошибка. Рекомендуется проверить понимание структуры HTML-документа.'],12:['Алина','Не приступила к практическому заданию, простой 6 минут.']},
+ warn:{3:['Марат','Не найден обязательный элемент &lt;body&gt;.'],15:['Айдос','Ошибка повторяется в значении href элемента &lt;a&gt;.']}
+};
+const st={};for(let i=1;i<=24;i++)st[i]='ok';[3,8,15,19,21,24].forEach(i=>st[i]='warn');[7,12].forEach(i=>st[i]='bad');
+const lbl={ok:['t-ok','Без затруднений'],warn:['t-warn','Найдена ошибка'],bad:['t-bad','Нужно внимание']};
+const map=$('#map');
+for(let i=1;i<=24;i++){const b=document.createElement('button');b.className='pc';b.dataset.s=st[i];b.setAttribute('aria-pressed','false');
+ b.innerHTML='ПК'+String(i).padStart(2,'0')+'<span></span>';b.onclick=()=>show(i,b);map.appendChild(b)}
+function show(i,b){
+ map.querySelectorAll('.pc').forEach(x=>x.setAttribute('aria-pressed',x===b));
+ const n=names[i]||'Обучающийся №'+i, s=st[i];
+ const txt={ok:'Задания выполняются в соответствии с критериями.',
+  warn:'Найдена ошибка. Критерий: корректность атрибутов элементов. Рекомендация: мягкая подсказка по значению атрибута.',
+  bad:'Повторяющаяся ошибка либо простой. Рекомендуется подойти лично.'}[s];
+ const custom=(info[s]||{})[i];
+ $('#pcInfo').innerHTML='<h2>ПК №'+String(i).padStart(2,'0')+' · '+(custom?custom[0]:n)+'</h2><span class="tag '+lbl[s][0]+'">'+lbl[s][1]+'</span><div class="box">'+(custom?custom[1]:txt)+'</div><div class="row"><button class="btn pri" onclick="document.querySelector(\'[data-v=student]\').click()">Открыть рабочую тетрадь</button></div>';
+}
+$('#pcInfo').innerHTML='<h2>Выберите компьютер</h2><p class="sub">AI покажет причину, а не только цвет.</p>';
+// student check
+const tpl=$('#code').value;let tries=0;
+const checks=[['<!DOCTYPE html>',/<!doctype html>/i],['<html>',/<html[\s>][\s\S]*<\/html>/i],['<head>',/<head>[\s\S]*<\/head>/i],['<body>',/<body[\s>][\s\S]*<\/body>/i]];
+$('#send').onclick=()=>{
+ const c=$('#code').value;
+ const r=checks.map(x=>[x[0],x[1].test(c)]);
+ // order check: body must follow head
+ const okOrder=/<\/head>[\s\S]*<body/i.test(c);
+ const good=r.filter(x=>x[1]).length;
+ let h='<ul class="chk">'+r.map(x=>'<li class="'+(x[1]?'y':'n')+'">'+(x[1]?'✓':'✕')+' '+x[0].replace(/</g,'&lt;')+' — '+(x[1]?'правильно':'отсутствует')+'</li>').join('')+'</ul>';
+ if(good===4&&okOrder){h+='<span class="tag t-ok">ВЕРНО</span><div class="box">Все основные элементы на месте и расположены в правильном порядке. Можно переходить к заданию №2.</div>';tries=0}
+ else{
+  tries++;
+  const hint=tries===1?'Проверь, в каком элементе HTML-документа должно располагаться содержимое, которое пользователь видит на странице.':'Добавь элемент, который идёт после &lt;head&gt; и закрывается перед &lt;/html&gt;. Внутри него размести видимое содержимое.';
+  h+='<span class="tag t-warn">ТРЕБУЕТ ДОРАБОТКИ</span><div class="box"><b>'+good+' из 4 элементов на месте.</b><br>'+hint+'<br><small>Подсказка №'+Math.min(tries,2)+' · попытка №'+tries+'</small></div>';
+ }
+ h+='<p class="notice">Критерий: структура HTML-документа. Итог предлагает AI, окончательное решение принимает преподаватель.</p>';
+ $('#res').innerHTML=h;
+};
+$('#reset').onclick=()=>{$('#code').value=tpl;tries=0;$('#res').innerHTML='<p class="sub">Проверка ещё не запускалась.</p>'};
+// marks
+const rows=[['Работа №14',9,7],['Работа №03',8,8],['Работа №21',6,9],['Работа №09',7,7]];
+$('#mk').innerHTML=rows.map((r,i)=>{const d=Math.abs(r[1]-r[2]);
+ return '<tr id="r'+i+'"><td>'+r[0]+(d>=2?'<br><span class="tag t-warn">Проверить · расхождение '+d+'</span>':'')+'</td><td>'+r[1]+'/10</td><td>'+r[2]+'/10</td><td class="fin">—</td><td><button class="btn" data-a="ok" data-i="'+i+'">Подтвердить</button> <input class="num" type="number" min="0" max="10" value="'+r[2]+'" aria-label="Своя оценка"> <button class="btn" data-a="ed" data-i="'+i+'">Изменить</button> <button class="btn" data-a="no" data-i="'+i+'">Отклонить</button></td></tr>'}).join('');
+$('#mk').onclick=e=>{const b=e.target.closest('button');if(!b)return;const tr=b.closest('tr'),i=+b.dataset.i,f=tr.querySelector('.fin');
+ if(b.dataset.a==='ok')f.textContent=rows[i][2]+'/10 (принято)';
+ if(b.dataset.a==='ed')f.textContent=tr.querySelector('input').value+'/10 (изменено)';
+ if(b.dataset.a==='no')f.textContent='Отклонено';};
+
+
+// ===== Реальный AI через runtime-capability sample =====
+let SAMPLE=null;
+const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k)||'';localStorage.setItem(k,v)}catch(e){return ''}};
+const prov=()=>LS('aiProv')||'browser';
+const WMODEL='Qwen2.5-1.5B-Instruct-q4f16_1-MLC';let engine=null;
+async function webGen(msgs,opts){
+ if(!navigator.gpu)throw {code:'no_webgpu'};
+ if(!engine){try{
+  const w=await import('https://esm.run/@mlc-ai/web-llm');
+  engine=await w.CreateMLCEngine(WMODEL,{initProgressCallback:p=>{const t=$('#aiState');t.hidden=false;t.className='tag t-warn';t.textContent='Загрузка модели '+Math.round((p.progress||0)*100)+'%'}});
+  setState();
+ }catch(e){engine=null;throw {code:'load_fail'}}}
+ const r=await engine.chat.completions.create({messages:msgs,temperature:0.2,max_tokens:700,response_format:opts.json?{type:'json_object'}:undefined});
+ return r.choices[0].message.content;
+}
+function apiShim(){
+ const f=async(input,opts={})=>{
+  const msgs=typeof input==='string'?[{role:'user',content:input}]:input;let text;
+  if(prov()==='browser'){text=await webGen(msgs,opts)}
+  else if(prov()==='ollama'){
+   let r;try{r=await fetch('http://localhost:11434/api/chat',{method:'POST',body:JSON.stringify({model:LS('aiModel')||'qwen2.5:7b',messages:msgs,stream:false,format:opts.json?'json':undefined,options:{temperature:0.2}})})}catch(e){throw {code:'no_server'}}
+   if(r.status===404)throw {code:'bad_model'};if(!r.ok)throw {code:'error'};
+   text=(await r.json()).message.content;
+  }else{
+   const key=LS('aiKey');if(!key)throw {code:'no_key'};
+   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:1000,messages:msgs})});
+   if(!r.ok)throw {code:r.status===429?'rate_limited':(r.status===401?'bad_key':'error')};
+   text=(await r.json()).content.filter(c=>c.type==='text').map(c=>c.text).join('');
+  }
+  if(opts.onText)opts.onText({text});
+  return {text};
+ };
+ f.json=async(i,o)=>{const {text}=await f(i,{...o,json:true});return JSON.parse(text.replace(/```json|```/g,'').trim())};
+ return f;
+}
+const keyMsg=e=>({no_webgpu:'Браузер не поддерживает WebGPU. Откройте страницу в свежем Chrome или Edge на компьютере.',load_fail:'Не удалось загрузить модель. Нужен интернет при первом запуске. Если файл открыт двойным кликом, запустите в его папке «python -m http.server» и откройте http://localhost:8000/ai-agent-uroka.html',bad_key:'API-ключ не принят.',no_key:'Введите API-ключ или выберите Ollama.',bad_model:'Модель не найдена. В терминале выполните: ollama pull '+(LS('aiModel')||'qwen2.5:7b'),
+ no_server:'Ollama не запущена. Установите её с ollama.com, выполните «ollama pull qwen2.5:7b» и запустите с разрешением для файла: OLLAMA_ORIGINS=* ollama serve'}[e.code]||'Ошибка ИИ.');
+let viaClaude=false;
+function setState(){const t=$('#aiState');t.hidden=false;t.className='tag t-ok';t.textContent=viaClaude?'Claude подключён':(prov()==='browser'?'ИИ: в браузере (Qwen2.5-1.5B)':prov()==='ollama'?'ИИ: Ollama ('+(LS('aiModel')||'qwen2.5:7b')+')':'ИИ: Claude API')}
+function syncKey(){const k=$('#key');k.style.display=$('#prov').value==='browser'?'none':'';if($('#prov').value==='ollama'){k.type='text';k.placeholder='Модель, например qwen2.5:7b';k.value=LS('aiModel')}else{k.type='password';k.placeholder='sk-ant-…';k.value=LS('aiKey')}}
+(async()=>{try{SAMPLE=await claude.use("sample");viaClaude=!!SAMPLE}catch(e){SAMPLE=null}
+ if(!SAMPLE){SAMPLE=apiShim();$('#keyBox').style.display='flex';$('#prov').value=prov();syncKey()}
+ setState();})();
+$('#prov').onchange=()=>{LS('aiProv',$('#prov').value);syncKey();setState()};
+$('#keySave').onclick=()=>{if($('#prov').value==='browser'){setState();return}LS($('#prov').value==='ollama'?'aiModel':'aiKey',$('#key').value.trim());setState()};
+const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const SYS='Ты AI-агент урока в CRM школы. Ты не выставляешь оценку окончательно: предлагаешь результат, преподаватель подтверждает. Проверяй работу строго по критериям преподавателя. Не давай готовое решение: при первой ошибке дай мягкую наводящую подсказку без кода, при повторной попытке (attempt>=2) дай более конкретную подсказку, но всё равно без готового кода. Пиши по-русски, коротко и доброжелательно, обращаясь к ученику на «ты».';
+async function aiCheck(){
+ const attempt=++tries;
+ const q='Критерии и условие:\n'+$('#crit').value+'\n\nРабота ученика:\n'+$('#code').value+'\n\nattempt: '+attempt+
+ '\n\nВерни ТОЛЬКО JSON без markdown: {"criteria":[{"name":"критерий","ok":true|false,"found":"что обнаружено или не обнаружено"}],"status":"correct"|"partial"|"wrong","comment":"краткий комментарий по-русски","hint":"педагогическая подсказка или пустая строка если всё верно"}';
+ const r=await SAMPLE.json([{role:'user',content:SYS+'\n\n'+q}],{modelTier:'quick',cache:false});
+ const ok=r.status==='correct';
+ let h='<ul class="chk">'+(r.criteria||[]).map(x=>'<li class="'+(x.ok?'y':'n')+'">'+(x.ok?'✓':'✕')+' '+esc(x.name)+' — '+esc(x.found||'')+'</li>').join('')+'</ul>';
+ const tg={correct:['t-ok','ВЕРНО'],partial:['t-warn','ТРЕБУЕТ ДОРАБОТКИ'],wrong:['t-bad','НЕ ВЫПОЛНЕНО']}[r.status]||['t-warn','ТРЕБУЕТ ДОРАБОТКИ'];
+ h+='<span class="tag '+tg[0]+'">'+tg[1]+'</span><div class="box">'+esc(r.comment||'')+(r.hint?'<br><br><b>Подсказка:</b> '+esc(r.hint):'')+'<br><small>Ответ Claude · попытка №'+attempt+'</small></div><p class="notice">Это предложение AI. Итог утверждает преподаватель.</p>';
+ if(ok)tries=0;
+ return h;
+}
+const ruleSend=$('#send').onclick;
+$('#send').onclick=async()=>{
+ if(!SAMPLE)return ruleSend();
+ const b=$('#send');b.disabled=true;b.textContent='AI проверяет…';
+ try{$('#res').innerHTML=await aiCheck()}
+ catch(e){tries--;if(e&&(['no_key','bad_key','no_server','bad_model','no_webgpu','load_fail'].includes(e.code))){$('#res').innerHTML='<div class="box">'+keyMsg(e)+'</div>'}else if(e&&e.code==='not_granted'){$('#res').innerHTML='<div class="box">Доступ к AI не разрешён. Разрешите его в запросе, либо используется простая проверка.</div>'}
+  else if(e&&e.code==='rate_limited'){$('#res').innerHTML='<div class="box">Слишком много запросов. Подождите немного и отправьте снова.</div>'}
+  else{ruleSend()}}
+ b.disabled=false;b.textContent='Отправить на проверку';
+};
+function groupData(){return JSON.stringify({тема:'Структура HTML-документа',всего:24,уверенно:16,с_ошибками:6,нужно_внимание:2,
+ требуют_внимания:[{пк:7,имя:'Данияр',проблема:'повторил ошибку в структуре HTML 3 раза'},{пк:12,имя:'Алина',проблема:'не выполняет задание 6 минут'},{пк:19,имя:'Арман',проблема:'не выполнены 2 критерия'}],
+ частая_ошибка:'у 7 обучающихся неверный href в <a>',расхождения_оценок:[{работа:14,взаимо:9,ai:7},{работа:21,взаимо:6,ai:9}],использовано_подсказок:31,выполнили_практическую:21,достигли_всех_критериев:18});}
+async function run(btn,out,prompt,label){
+ if(!SAMPLE){out.innerHTML='<div class="box">Claude недоступен в этом окне. Откройте страницу из claude.ai.</div>';return}
+ const t=btn.textContent;btn.disabled=true;btn.textContent='AI думает…';out.innerHTML='';
+ try{const r=await SAMPLE([{role:'user',content:prompt+'\n\nДанные урока (JSON):\n'+groupData()}],{modelTier:'default',cache:false,onText:({text})=>{out.innerHTML='<div class="box" style="white-space:pre-wrap">'+esc(text)+'<br><small>'+label+'</small></div>'}});
+  out.innerHTML='<div class="box" style="white-space:pre-wrap">'+esc(r.text)+'<br><small>'+label+'</small></div>';}
+ catch(e){out.innerHTML='<div class="box">'+(e&&(['no_key','bad_key','no_server','bad_model','no_webgpu','load_fail'].includes(e.code))?keyMsg(e):e&&e.code==='not_granted'?'Доступ к AI не разрешён.':'Не удалось получить ответ. Попробуйте ещё раз.')+'</div>'}
+ btn.disabled=false;btn.textContent=t;
+}
+$('#grp').onclick=()=>run($('#grp'),$('#grpOut'),SYS+'\nТы помогаешь преподавателю во время урока. Ответь без markdown, до 120 слов: 1) к кому подойти первым и почему; 2) что объяснить всей группе; 3) один вопрос для проверки понимания.','Ответ Claude на основе данных группы');
+$('#gen').onclick=()=>{$('#rep').hidden=false;run($('#gen'),$('#repAI'),SYS+'\nСформируй AI Lesson Report: итог урока для преподавателя без markdown, до 150 слов: что группа освоила, где трудности, кому нужна поддержка, рекомендация для следующего занятия, и что проверить в расхождениях оценок.','AI Lesson Report · сформирован Claude')};
+</script>
+</body>
+</html>
